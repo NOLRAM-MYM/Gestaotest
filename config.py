@@ -16,8 +16,6 @@ app = Flask(__name__)
 
 # Configurações básicas da aplicação
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-here')  # Chave secreta para sessões
-
-# DATABASE_URL = 
 # Configuração do banco de dados com fallback para SQLite local
 try:
     # Tenta usar o banco de dados de produção se a URL estiver configurada
