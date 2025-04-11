@@ -51,37 +51,65 @@
                         </div>
                         <div class="mb-3">
                             <label for="images" class="form-label">Fotos do Cliente</label>
-                            <style>
-                            .image-scroll-container {
-                                height: 200px;
-                                overflow-x: auto;
-                                white-space: nowrap;
-                                scrollbar-width: thin;
-                                scrollbar-color: #6c757d #f8f9fa;
-                            }
-                            .image-scroll-container::-webkit-scrollbar {
-                                height: 8px;
-                            }
-                            .image-scroll-container::-webkit-scrollbar-track {
-                                background: #f8f9fa;
+                           
+                            {% if client.images %}
+                            {% if client.images %}
+                            <div class="image-preview-container mb-2">
+                                {% for image in client.images %}
+                                <div class="image-preview">
+                                    <img src="{{ url_for('clients.get_client_image', image_id=image.id) }}" 
+                                         alt="{{ client.full_name }}">
+                                    <button type="button" class="remove-image" 
+                                            onclick="deleteImage({{ image.id }}, this)">&times;</button>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            {% endif %}
+                            <div class="dropzone-container" id="dropzone">
+                                <div class="dropzone-area">
+                                    <i class="fas fa-cloud-upload-alt fa-2x mb-2"></i>
+                                    <p>Arraste e solte as imagens aqui ou clique para selecionar</p>
+                                    <input type="file" class="form-control d-none" id="images" name="images[]" accept="image/*" multiple>
+                                </div>
+                                <div id="preview-container" class="image-preview-container"></div>
+                            </div>
+                            <div class="form-text">Formatos aceitos: PNG, JPG, JPEG, GIF. Você pode selecionar até 5 imagens.</div>
+                        </div>
+                        <style>
+                            .dropzone-container {
+                                border: 2px dashed #ccc;
                                 border-radius: 4px;
+                                padding: 20px;
+                                text-align: center;
+                                background-color: #f8f9fa;
+                                transition: all 0.3s ease;
                             }
-                            .image-scroll-container::-webkit-scrollbar-thumb {
-                                background-color: #6c757d;
-                                border-radius: 4px;
+                            .dropzone-container.dragover {
+                                background-color: #e9ecef;
+                                border-color: #0d6efd;
                             }
-                            .image-scroll-container img {
-                                transition: transform 0.2s;
-                                margin-right: 4px;
+                            .dropzone-area {
+                                cursor: pointer;
                             }
-                            .image-scroll-container img:hover {
-                                transform: scale(1.05);
+                            .image-preview-container {
+                                display: flex;
+                                flex-wrap: wrap;
+                                gap: 10px;
+                                margin-top: 15px;
                             }
-                            .image-container {
-                                display: inline-block;
+                            .image-preview {
                                 position: relative;
+                                width: 150px;
+                                height: 150px;
                             }
-                            .delete-image {
+                            .image-preview img {
+                                width: 100%;
+                                height: 100%;
+                                object-fit: cover;
+                                border-radius: 4px;
+                            }
+                            .image-preview .remove-image {
                                 position: absolute;
                                 top: 5px;
                                 right: 5px;
@@ -95,36 +123,11 @@
                                 display: flex;
                                 align-items: center;
                                 justify-content: center;
-                                font-size: 14px;
                             }
-                            .delete-image:hover {
+                            .image-preview .remove-image:hover {
                                 background-color: rgba(255, 0, 0, 0.9);
                             }
-                            </style>
-                            {% if client.images %}
-                            <div class="image-scroll-container mb-2">
-                                {% for image in client.images %}
-                                <div class="image-container">
-                                    <img src="{{ url_for('clients.get_client_image', image_id=image.id) }}" 
-                                         alt="{{ client.full_name }}" 
-                                         class="d-inline-block" 
-                                         style="height: 200px; width: auto; object-fit: cover;">
-                                    <button type="button" class="delete-image" 
-                                            onclick="deleteImage({{ image.id }}, this)">&times;</button>
-                                </div>
-                                {% endfor %}
-                            </div>
-                            {% endif %}
-                            <div class="dropzone-container" id="dropzone">
-                                <div class="dropzone-area">
-                                    <i class="fas fa-cloud-upload-alt fa-2x mb-2"></i>
-                                    <p>Arraste e solte as imagens aqui ou clique para selecionar</p>
-                                    <input type="file" class="form-control d-none" id="images" name="images[]" accept="image/*" multiple>
-                                </div>
-                                <div id="preview-container" class="image-preview-container"></div>
-                            </div>
-                            <div class="form-text">Formatos aceitos: PNG, JPG, JPEG, GIF. Você pode selecionar até 5 imagens.</div>
-                        </div>
+                        </style>
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-primary btn-lg">
                                 <i class="fas fa-check me-2"></i>Salvar Alterações
