@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+{% block title %}Novo Cliente{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white py-3">
+                    <h4 class="card-title mb-0 fw-bold">Novo Cliente</h4>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" enctype="multipart/form-data">
+                        {{ form.csrf_token }}
+                        <div class="mb-3">
+                            <label for="full_name" class="form-label">Nome Completo</label>
+                            <input type="text" class="form-control" id="full_name" name="full_name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="japan_address" class="form-label">Endereço no Japão</label>
+                            <input type="text" class="form-control" id="japan_address" name="japan_address">
+                        </div>
+                        <div class="mb-3">
+                            <label for="japan_phone" class="form-label">Telefone no Japão</label>
+                            <input type="tel" class="form-control" id="japan_phone" name="japan_phone">
+                        </div>
+                        <div class="mb-3">
+                            <label for="japan_id" class="form-label">ID Japonês</label>
+                            <input type="text" class="form-control" id="japan_id" name="japan_id" required>
+                            <div class="form-text">Número de identificação único no Japão</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="images" class="form-label">Fotos do Cliente</label>
+                            <div class="dropzone-container" id="dropzone">
+                                <div class="dropzone-area">
+                                    <i class="fas fa-cloud-upload-alt fa-2x mb-2"></i>
+                                    <p>Arraste e solte as imagens aqui ou clique para selecionar</p>
+                                    <input type="file" class="form-control d-none" id="images" name="images[]" accept="image/*" multiple>
+                                </div>
+                                <div id="preview-container" class="image-preview-container"></div>
+                            </div>
+                            <div class="form-text">Você pode selecionar até 5 imagens. Formatos aceitos: PNG, JPG, JPEG, GIF</div>
+                        </div>
+                        <style>
+                            .dropzone-container {
+                                border: 2px dashed #ccc;
+                                border-radius: 4px;
+                                padding: 20px;
+                                text-align: center;
+                                background-color: #f8f9fa;
+                                transition: all 0.3s ease;
+                            }
+                            .dropzone-container.dragover {
+                                background-color: #e9ecef;
+                                border-color: #0d6efd;
+                            }
+                            .dropzone-area {
+                                cursor: pointer;
+                            }
+                            .image-preview-container {
+                                display: flex;
+                                flex-wrap: wrap;
+                                gap: 10px;
+                                margin-top: 15px;
+                            }
+                            .image-preview {
+                                position: relative;
+                                width: 150px;
+                                height: 150px;
+                            }
+                            .image-preview img {
+                                width: 100%;
+                                height: 100%;
+                                object-fit: cover;
+                                border-radius: 4px;
+                            }
+                            .image-preview .remove-image {
+                                position: absolute;
+                                top: 5px;
+                                right: 5px;
+                                background-color: rgba(255, 0, 0, 0.7);
+                                color: white;
+                                border: none;
+                                border-radius: 50%;
+                                width: 24px;
+                                height: 24px;
+                                cursor: pointer;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                            }
+                            .image-preview .remove-image:hover {
+                                background-color: rgba(255, 0, 0, 0.9);
+                            }
+                        </style>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-check me-2"></i>Salvar Cliente
+                            </button>
+                            <a href="{{ url_for('clients.list_clients') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i>Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('images');
+const previewContainer = document.getElementById('preview-container');
+let files = [];
+
+dropzone.addEventListener('click', () => fileInput.click());
+
+dropzone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropzone.classList.add('dragover');
+});
+
+dropzone.addEventListener('dragleave', () => {
+    dropzone.classList.remove('dragover');
+});
+
+dropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropzone.classList.remove('dragover');
+    const newFiles = Array.from(e.dataTransfer.files).filter(file => file.type.startsWith('image/'));
+    handleFiles(newFiles);
+});
+
+fileInput.addEventListener('change', (e) => {
+    const newFiles = Array.from(e.target.files);
+    handleFiles(newFiles);
+});
+
+function handleFiles(newFiles) {
+    if (files.length + newFiles.length > 5) {
+        alert('Você pode selecionar no máximo 5 imagens.');
+        return;
+    }
+
+    newFiles.forEach(file => {
+        if (!file.type.startsWith('image/')) {
+            alert('Por favor, selecione apenas arquivos de imagem.');
+            return;
+        }
+
+        files.push(file);
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const preview = document.createElement('div');
+            preview.className = 'image-preview';
+            preview.innerHTML = `
+                <img src="${e.target.result}" alt="Preview">
+                <button type="button" class="remove-image" data-filename="${file.name}">&times;</button>
+            `;
+            previewContainer.appendChild(preview);
+
+            preview.querySelector('.remove-image').addEventListener('click', function() {
+                const filename = this.dataset.filename;
+                files = files.filter(f => f.name !== filename);
+                preview.remove();
+                updateFileInput();
+            });
+        };
+        reader.readAsDataURL(file);
+    });
+
+    updateFileInput();
+}
+
+function updateFileInput() {
+    const dataTransfer = new DataTransfer();
+    files.forEach(file => dataTransfer.items.add(file));
+    fileInput.files = dataTransfer.files;
+}
+
+document.getElementById('japan_phone').addEventListener('input', function(e) {
+    // Formato básico para número de telefone japonês
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length > 0) {
+        if (value.length <= 3) {
+            value = value;
+        } else if (value.length <= 7) {
+            value = value.slice(0, 3) + '-' + value.slice(3);
+        } else {
+            value = value.slice(0, 3) + '-' + value.slice(3, 7) + '-' + value.slice(7, 11);
+        }
+    }
+    e.target.value = value;
+});
+</script>
+{% endblock %}

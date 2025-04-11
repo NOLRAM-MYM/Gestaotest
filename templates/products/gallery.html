@@ -1,0 +1,566 @@
+{% extends "base.html" %}
+{% block title %}Galeria de Produtos{% endblock %}
+
+{% block content %}
+<style>
+    .product-card {
+        transition: all var(--transition-normal);
+        border: none;
+        overflow: hidden;
+        background: var(--bg-primary);
+        box-shadow: var(--shadow-md);
+        border-radius: 16px;
+        position: relative;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+    }
+    .product-card:hover {
+        transform: translateY(-12px);
+        box-shadow: var(--shadow-lg);
+        background: rgba(255, 255, 255, 0.95);
+    }
+    .product-image {
+        transition: all var(--transition-slow);
+        cursor: zoom-in;
+        position: relative;
+        background-color: var(--bg-secondary);
+        border-radius: 16px 16px 0 0;
+        filter: brightness(1);
+    }
+    .product-image:hover {
+        transform: scale(1.05);
+        filter: brightness(1.05);
+    }
+    .product-card .card-body {
+        padding: 1.75rem;
+        background: linear-gradient(180deg, rgba(255,255,255,0) 0%, var(--bg-primary) 100%);
+    }
+    .product-card .card-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+        color: var(--text-primary);
+    }
+    .product-card .card-text {
+        color: var(--text-secondary);
+        line-height: 1.5;
+        margin-bottom: 1rem;
+    }
+    .product-card .price {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+    .product-card .stock-badge {
+        padding: 0.35rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+    .category-filter {
+        transition: all var(--transition-normal);
+        border-radius: 30px;
+        padding: 12px 24px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        border: none;
+        background-color: var(--bg-secondary);
+        color: var(--text-secondary);
+        letter-spacing: 0.5px;
+        box-shadow: var(--shadow-sm);
+    }
+    .category-filter:hover {
+        background-color: var(--bg-tertiary);
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-md);
+        color: var(--text-primary);
+    }
+    .category-filter.active {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+        color: white;
+        box-shadow: var(--shadow-lg);
+        font-weight: 700;
+        transform: translateY(-2px);
+    }
+    .carousel-indicators {
+        margin-bottom: 0;
+        position: relative;
+        margin-top: 15px;
+    }
+    .carousel-indicators [data-bs-target] {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background-color: var(--bg-tertiary);
+        border: none;
+        margin: 0 6px;
+        transition: all var(--transition-normal);
+    }
+    .carousel-indicators .active {
+        background-color: var(--primary);
+        transform: scale(1.2);
+    }
+    .product-item {
+        transition: all 0.5s ease;
+        cursor: zoom-in;
+        position: relative;
+    }
+    .product-image:hover {
+        transform: scale(1.08);
+    }
+    .category-filter {
+        transition: all 0.3s ease;
+        border-radius: 20px;
+        padding: 8px 16px;
+        font-weight: 500;
+    }
+    .category-filter:hover {
+        background-color: #e9ecef;
+        transform: translateY(-2px);
+    }
+    .category-filter.active {
+        background-color: #0d6efd;
+        color: white;
+        box-shadow: 0 4px 12px rgba(13, 110, 253, 0.2);
+    }
+    .carousel-indicators {
+        margin-bottom: 0;
+    }
+    .carousel-indicators [data-bs-target] {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: rgba(255,255,255,0.8);
+        margin: 0 4px;
+    }
+    .carousel-indicators .active {
+        background-color: #fff;
+    }
+</style>
+
+<style>
+    .btn-new-sale {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+        border: none;
+        box-shadow: var(--shadow-sm);
+        color: white;
+    }
+    
+    .btn-new-sale:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+        background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
+        color: white;
+    }
+</style>
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-primary fw-bold">Galeria de Produtos</h2>
+        <div>
+            <a href="{{ url_for('products.list_products') }}" class="btn btn-outline-secondary me-2">
+                <i class="fas fa-list me-2"></i>Visualização em Lista
+            </a>
+            {% if current_user.is_admin %}
+            <a href="{{ url_for('products.create_product') }}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Novo Produto
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card mb-4">
+            <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Filtros</h5>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Buscar</label>
+                    <input type="text" class="form-control" id="searchInput" placeholder="Buscar produtos...">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Ordenar por</label>
+                    <select class="form-select" id="sortSelect">
+                        <option value="name">Nome (A-Z)</option>
+                        <option value="price-asc">Preço (Menor-Maior)</option>
+                        <option value="price-desc">Preço (Maior-Menor)</option>
+                        <option value="stock">Estoque</option>
+                    </select>
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label">Categorias</label>
+                    <select class="form-select" id="categorySelect">
+                        <option value="all">Todas as Categorias</option>
+                        {% for category in categories %}
+                        <option value="{{ category.name }}">{{ category.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                
+                <div class="col-md-6">
+                    
+                    <label class="form-label">Faixa de Preço</label>
+                    <div class="px-4">
+                        <div id="priceSlider"></div>
+                        <div class="d-flex justify-content-between mt-2">
+                            <span id="minPriceLabel">¥ 0</span>
+                            <span id="maxPriceLabel">¥ 0</span>
+                        </div>
+                        
+                    </div>
+                    
+                </div>
+                
+                <div class="col-md-3 d-flex align-items-end">
+                    
+                </div>
+                
+            </div>
+        </div>
+    </div>
+
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4" id="products-grid">
+        {% for product in products %}
+        <div class="col product-item" data-category="{{ product.category.name }}">
+            <div class="card h-100 shadow-sm product-card">
+                <div class="position-relative">
+                    {% if product.images %}
+                    <img src="{{ url_for('products.get_product_image', image_id=product.images[0].id) }}" 
+                         class="d-block w-100 product-image" 
+                         alt="{{ product.name }}"
+                         style="height: 300px; object-fit: cover;"
+                         data-bs-toggle="modal"
+                         data-bs-target="#productModal-{{ product.id }}">
+                    {% else %}
+                    <img src="{{ url_for('static', filename='uploads/placeholder.svg') }}" 
+                         class="card-img-top" 
+                         alt="Sem imagem"
+                         style="height: 300px; object-fit: cover;">
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ product.name }}</h5>
+                    <p class="card-text text-muted small">{{ product.description|truncate(100) }}</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="mb-0 fw-bold">¥ {{ "%.2f"|format(product.price) }}</p>
+                            <small class="text-muted">Estoque: {{ product.stock }}</small>
+                        </div>
+                        {% if current_user.is_admin %}
+                        <div class="d-flex gap-2" >
+                            <a href="{{ url_for('sales.create_sale', product_id=product.id) }}" class="btn btn-new-sale btn-sm" title="Nova Venda" >
+                                <i class="fas fa-shopping-cart" ></i>
+                            </a>
+                            <a href="{{ url_for('products.edit_product', id=product.id) }}" class="btn btn-outline-primary btn-sm" title="Editar">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                        </div>
+                        {% else %}
+                        <a href="{{ url_for('sales.create_sale', product_id=product.id) }}" class="btn btn-new-sale btn-sm" title="Nova Venda">
+                            <i class="fas fa-shopping-cart"></i>
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Modal para visualização rápida do produto -->
+{% for product in products %}
+<div class="modal fade" id="productModal-{{ product.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 24px; overflow: hidden; box-shadow: 0 35px 60px rgba(0, 0, 0, 0.18); background: rgba(255,255,255,0.98); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);">
+            <div class="modal-header border-0" style="padding: 0.75remrem; background: linear-gradient(to right,rgb(255, 255, 255),rgb(255, 255, 255));">
+                <h5 class="modal-title fw-bold" style="font-size: 1.75rem; color: #1a202c; letter-spacing: -0.5px;">{{ product.name }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="background-color:rgb(255, 0, 0); border-radius: 50%; padding: 1rem;"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="row g-0">
+                    <div class="col-md-7">
+                        {% if product.images %}
+                        <div id="modalCarousel-{{ product.id }}" class="carousel slide" data-bs-ride="carousel">
+                            <div class="carousel-inner bg-light">
+                                {% for image in product.images %}
+                                <div class="carousel-item {% if loop.first %}active{% endif %}">
+                                    <img src="{{ url_for('products.get_product_image', image_id=image.id) }}" 
+                                         class="d-block w-100" 
+                                         alt="{{ product.name }}"
+                                         style="height: 700px; object-fit: contain; padding: 15px; background-color: #f8fafc;">
+                                </div>
+                                {% endfor %}
+                            </div>
+                           
+                            <div class="carousel-indicators" style="position: relative; margin-top: 10px;">
+                                {% for image in product.images %}
+                                <button type="button" 
+                                        data-bs-target="#modalCarousel-{{ product.id }}" 
+                                        data-bs-slide-to="{{ loop.index0 }}" 
+                                        {% if loop.first %}class="active"{% endif %}
+                                        style="background-color: #000;"
+                                        aria-current="true" 
+                                        aria-label="Slide {{ loop.index }}"></button>
+                                {% endfor %}
+                            </div>
+                            {% if product.images|length > 1 %}
+                            <button class="carousel-control-prev" type="button" data-bs-target="#modalCarousel-{{ product.id }}" data-bs-slide="prev">
+                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Anterior</span>
+                            </button>
+                            <button class="carousel-control-next" type="button" data-bs-target="#modalCarousel-{{ product.id }}" data-bs-slide="next">
+                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Próximo</span>
+                            </button>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-5">
+                        <div class="p-5">
+                            <h4 class="fw-bold mb-4">Detalhes do Produto</h4>
+                            <div class="mb-4">
+                                <h5 class="text-primary fw-bold mb-3" style="font-size: 1.75rem; color: #2d3748;">¥ {{ "%.2f"|format(product.price) }}</h5>
+                                <div class="d-flex flex-wrap gap-2 mb-4">
+                                    <span class="badge rounded-pill px-3 py-2" style="background-color: #3182ce; font-size: 0.9rem;">{{ product.category.name }}</span>
+                                    <span class="badge rounded-pill px-3 py-2 {% if product.stock > 10 %}bg-success{% elif product.stock > 0 %}bg-warning{% else %}bg-danger{% endif %}" style="font-size: 0.9rem;">
+                                        <i class="fas fa-box me-1"></i> {{ product.stock }} em estoque
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="description-box p-4" style="background-color: #f8fafc; border-radius: 13px; border: 1px solid #e2e8f0;">
+                                <h6 class="fw-bold mb-3" style="color: #4a5568;">Descrição</h6>
+                                <div style="max-height: 400px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #718096 #f8fafc;">
+                                    <p class="mb-0" style="color: #718096; line-height: 1.6; white-space: pre-wrap; word-wrap: break-word;">{{ product.description }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nouislider@14.6.3/distribute/nouislider.min.css">
+<script src="https://cdn.jsdelivr.net/npm/nouislider@14.6.3/distribute/nouislider.min.js"></script>
+<style>
+    .noUi-connect {
+        background: #0d6efd;
+    }
+    .noUi-handle {
+        border: 2px solid #0d6efd;
+        background: #fff;
+        border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+    }
+    .noUi-handle:hover {
+        transform: scale(1.1);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    .noUi-handle:before,
+    .noUi-handle:after {
+        display: none;
+    }
+    .noUi-target {
+        border-radius: 8px;
+        border: none;
+        box-shadow: none;
+        background: #e9ecef;
+    }
+    .noUi-connects {
+        border-radius: 8px;
+    }
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const filterButtons = document.querySelectorAll('.category-filter');
+    const productItems = document.querySelectorAll('.product-item');
+    const searchInput = document.getElementById('searchInput');
+    const sortSelect = document.getElementById('sortSelect');
+    const priceSlider = document.getElementById('priceSlider');
+    const minPriceLabel = document.getElementById('minPriceLabel');
+    const maxPriceLabel = document.getElementById('maxPriceLabel');
+
+    let currentCategory = 'all';
+    let currentSearch = '';
+    let currentMinPrice = 0;
+    let currentMaxPrice = Infinity;
+
+    // Inicializa os tooltips do Bootstrap
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // Inicializa os popovers do Bootstrap
+    var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+    var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
+        return new bootstrap.Popover(popoverTriggerEl);
+    });
+
+    // Adiciona evento de mudança para o select de categoria
+    const categorySelect = document.getElementById('categorySelect');
+    categorySelect.addEventListener('change', (e) => {
+        currentCategory = e.target.value;
+        updateProductVisibility();
+    });
+
+    function clearFilters() {
+        // Reseta a categoria
+        currentCategory = 'all';
+        categorySelect.value = 'all';
+
+        // Reseta a busca
+        currentSearch = '';
+        searchInput.value = '';
+
+        // Reseta o slider de preço
+        if (priceSlider.noUiSlider) {
+            priceSlider.noUiSlider.set([0, maxPrice]);
+            currentMinPrice = 0;
+            currentMaxPrice = maxPrice;
+        }
+
+        // Reseta a ordenação
+        sortSelect.value = 'name';
+        sortProducts('name');
+
+        // Atualiza a visualização dos produtos
+        updateProductVisibility();
+    }
+
+    // Encontrar o preço máximo entre todos os produtos
+    let prices = Array.from(productItems).map(item => 
+        parseFloat(item.querySelector('.fw-bold').textContent.replace('¥', '').trim())
+    );
+    let maxPrice = Math.max(...prices);
+
+    noUiSlider.create(priceSlider, {
+        start: [0, maxPrice],
+        connect: true,
+        range: {
+            'min': 0,
+            'max': maxPrice
+        },
+        format: {
+            to: function(value) {
+                return Math.round(value);
+            },
+            from: function(value) {
+                return Number(value);
+            }
+        }
+    });
+
+    priceSlider.noUiSlider.on('update', function(values) {
+        currentMinPrice = values[0];
+        currentMaxPrice = values[1];
+        minPriceLabel.textContent = '¥ ' + values[0];
+        maxPriceLabel.textContent = '¥ ' + values[1];
+        updateProductVisibility();
+    });
+
+    function updateProductVisibility() {
+        productItems.forEach(item => {
+            const name = item.querySelector('.card-title').textContent.toLowerCase();
+            const category = item.dataset.category;
+            const price = parseFloat(item.querySelector('.fw-bold').textContent.replace('¥', '').trim());
+            
+            const matchesCategory = currentCategory === 'all' || category === currentCategory;
+            const matchesSearch = name.includes(currentSearch.toLowerCase());
+            const matchesPrice = price >= currentMinPrice && price <= currentMaxPrice;
+
+            if (matchesCategory && matchesSearch && matchesPrice) {
+                item.style.opacity = '0';
+                item.style.transform = 'scale(0.8)';
+                setTimeout(() => {
+                    item.style.display = '';
+                    requestAnimationFrame(() => {
+                        item.style.opacity = '1';
+                        item.style.transform = 'scale(1)';
+                    });
+                }, 300);
+            } else {
+                item.style.opacity = '0';
+                item.style.transform = 'scale(0.8)';
+                setTimeout(() => {
+                    item.style.display = 'none';
+                }, 300);
+            }
+        });
+    }
+
+    function sortProducts(criteria) {
+        const productsGrid = document.getElementById('products-grid');
+        const products = Array.from(productItems);
+
+        products.sort((a, b) => {
+            switch(criteria) {
+                case 'name':
+                    return a.querySelector('.card-title').textContent
+                        .localeCompare(b.querySelector('.card-title').textContent);
+                case 'price-asc':
+                    return parseFloat(a.querySelector('.fw-bold').textContent.replace('¥', '')) -
+                           parseFloat(b.querySelector('.fw-bold').textContent.replace('¥', ''));
+                case 'price-desc':
+                    return parseFloat(b.querySelector('.fw-bold').textContent.replace('¥', '')) -
+                           parseFloat(a.querySelector('.fw-bold').textContent.replace('¥', ''));
+                case 'stock':
+                    return parseInt(b.querySelector('.text-muted small').textContent.replace('Estoque: ', '')) -
+                           parseInt(a.querySelector('.text-muted small').textContent.replace('Estoque: ', ''));
+                default:
+                    return 0;
+            }
+        });
+
+        products.forEach(product => productsGrid.appendChild(product));
+    }
+
+    filterButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            currentCategory = button.dataset.category;
+            updateProductVisibility();
+        });
+    });
+
+    searchInput.addEventListener('input', (e) => {
+        currentSearch = e.target.value;
+        updateProductVisibility();
+    });
+
+    sortSelect.addEventListener('change', (e) => {
+        sortProducts(e.target.value);
+    });
+
+    // Adiciona efeito de loading lazy nas imagens
+    const images = document.querySelectorAll('.product-image');
+    images.forEach(img => {
+        img.loading = 'lazy';
+    });
+
+    // Adiciona efeito de fade ao modal
+    const productModals = document.querySelectorAll('.modal');
+    productModals.forEach(modal => {
+        modal.addEventListener('show.bs.modal', function() {
+            this.style.display = 'block';
+            setTimeout(() => this.style.opacity = '1', 50);
+        });
+
+        modal.addEventListener('hide.bs.modal', function() {
+            this.style.opacity = '0';
+            setTimeout(() => this.style.display = 'none', 300);
+        });
+    });
+});
+</script>
+{% endblock %}

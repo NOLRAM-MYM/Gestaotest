@@ -1,0 +1,490 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-0 bg-gradient">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                        <div>
+                            <h2 class="mb-1 fw-bold">Dashboard</h2>
+                            <p class="text-muted mb-0">Visão geral do seu negócio</p>
+                        </div>
+                        <div class="d-flex flex-wrap gap-3 align-items-center">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="position-relative">
+                                    <label for="period-filter" class="form-label small text-muted mb-1">Período</label>
+                                    <select class="form-select form-select-lg bg-light border-0" id="period-filter" style="min-width: 180px;">
+                                        <option value="daily">Diário</option>
+                                        <option value="weekly">Semanal</option>
+                                        <option value="monthly">Mensal</option>
+                                        <option value="yearly">Anual</option>
+                                    </select>
+                                </div>
+                                <div class="position-relative">
+                                    <label for="date-filter" class="form-label small text-muted mb-1">Data</label>
+                                    <input type="date" class="form-control form-control-lg bg-light border-0" id="date-filter" style="min-width: 180px;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cards de Estatísticas -->
+    <div class="row mb-4 g-3">
+        <div class="col-12 col-sm-6 col-md-4 col-lg-2">
+            <div class="card shadow-sm border-0" style="background: linear-gradient(45deg, #4e73df, #224abe); transition: all 0.3s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-center h-100">
+                        <div class="d-flex flex-column justify-content-center text-white">
+                            <h5 class="card-title fs-6 mb-2 ">Total de Vendas</h5>
+                            <h2 class="mb-0 fs-4 text-nowrap">{{ total_sales }}</h2>
+                        </div>
+                        <i class="fas fa-shopping-cart fa-2x opacity-75 ms-3"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-4 col-lg-2">
+            <div class="card shadow-sm border-0" style="background: linear-gradient(45deg, #1cc88a, #13855c); transition: all 0.3s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-center h-100">
+                        <div class="d-flex flex-column justify-content-center text-white">
+                            <h5 class="card-title fs-6 mb-2 ">Receita Total</h5>
+                            <h2 class="mb-0 fs-4 text-nowrap">¥ {{ total_revenue|round|int }}</h2>
+                        </div>
+                        <i class="fas fa-dollar-sign fa-2x opacity-75 ms-3"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-4 col-lg-2">
+            <div class="card shadow-sm border-0" style="background: linear-gradient(45deg, #e74a3b, #be2617); transition: all 0.3s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-center h-100">
+                        <div class="d-flex flex-column justify-content-center text-white">
+                            <h5 class="card-title fs-6 mb-2 ">Custos Totais</h5>
+                            <h2 class="mb-0 fs-4 text-nowrap">¥ {{ total_custos|round|int }}</h2>
+                        </div>
+                        <i class="fas fa-chart-line fa-2x opacity-75 ms-3"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-4 col-lg-2">
+            <div class="card shadow-sm border-0" style="background: linear-gradient(45deg, #6f42c1, #4e2c94); transition: all 0.3s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-center h-100">
+                        <div class="d-flex flex-column justify-content-center text-white">
+                            <h5 class="card-title fs-6 mb-2 ">Lucro Total</h5>
+                            <h2 class="mb-0 fs-4 text-nowrap">¥ {{ lucro_total|round|int }}</h2>
+                        </div>
+                        <i class="fas fa-chart-pie fa-2x opacity-75 ms-3"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-4 col-lg-2">
+            <div class="card shadow-sm border-0" style="background: linear-gradient(45deg, #36b9cc, #258391); transition: all 0.3s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-center h-100">
+                        <div class="d-flex flex-column justify-content-center">
+                            <h5 class="card-title fs-6 mb-2 text-white">Total de Clientes</h5>
+                            <h2 class="mb-0 fs-4 text-nowrap">{{ total_clients }}</h2>
+                        </div>
+                        <i class="fas fa-users fa-2x opacity-75 ms-3"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-4 col-lg-2">
+            <div class="card shadow-sm border-0" style="background: linear-gradient(45deg, #f6c23e, #dfa408); transition: all 0.3s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-center h-100">
+                        <div class="d-flex flex-column justify-content-center">
+                            <h5 class="card-title fs-6 mb-2 text-white">Total de Produtos</h5>
+                            <h2 class="mb-0 fs-4 text-nowrap">{{ total_products }}</h2>
+                        </div>
+                        <i class="fas fa-box fa-2x opacity-75 ms-3"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráfico de Vendas -->
+    <div class="row mb-4 g-3">
+        <div class="col-12 col-lg-8">
+            <div class="card shadow-sm border-0 rounded-3">
+                <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center py-3">
+                    <h5 class="card-title mb-0 fw-bold text-white">Vendas por Período</h5>
+                    <div class="btn-group">
+                        <button class="btn btn-light" onclick="exportChart('salesChart', 'png')"><i class="fas fa-download me-2"></i>PNG</button>
+                        <button class="btn btn-light" onclick="exportChart('salesChart', 'pdf')"><i class="fas fa-file-pdf me-2"></i>PDF</button>
+                    </div>
+                </div>
+                <div class="card-body p-4">
+                    <canvas id="salesChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-lg-4">
+            <div class="card shadow-sm border-0 rounded-3">
+                <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center py-3">
+                    <h5 class="card-title mb-0 fw-bold text-white">Produtos Mais Vendidos</h5>
+                    <div class="btn-group">
+                        <button class="btn btn-light" onclick="exportChart('topProductsChart', 'png')"><i class="fas fa-download me-2"></i>PNG</button>
+                        <button class="btn btn-light" onclick="exportChart('topProductsChart', 'pdf')"><i class="fas fa-file-pdf me-2"></i>PDF</button>
+                    </div>
+                </div>
+                <div class="card-body p-4">
+                    <canvas id="topProductsChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Produtos com Baixo Estoque e Clientes Top -->
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-lg-6">
+            <div class="card shadow-sm border-0 rounded-3">
+                <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center py-3">
+                    <h5 class="card-title mb-0 fw-bold text-white">Produtos com Baixo Estoque</h5>
+                    <button class="btn btn-light" onclick="exportTableToCSV('low-stock-table')"><i class="fas fa-download me-2"></i>CSV</button>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" id="low-stock-table">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="border-0 px-4">Produto</th>
+                                    <th class="border-0 px-4">Estoque</th>
+                                    <th class="border-0 px-4">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for product in low_stock_products %}
+                                <tr>
+                                    <td class="px-4">{{ product.name }}</td>
+                                    <td class="px-4">{{ product.stock }}</td>
+                                    <td class="px-4">
+                                        <span class="badge rounded-pill {% if product.stock == 0 %}bg-danger{% else %}bg-warning{% endif %} px-3">
+                                            {% if product.stock == 0 %}Sem Estoque{% else %}Baixo Estoque{% endif %}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-lg-6">
+            <div class="card shadow-sm border-0 rounded-3">
+                <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center py-3">
+                    <h5 class="card-title mb-0 fw-bold text-white">Clientes Mais Ativos</h5>
+                    <button class="btn btn-light" onclick="exportTableToCSV('top-clients-table')"><i class="fas fa-download me-2"></i>CSV</button>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" id="top-clients-table">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="border-0 px-4">Cliente</th>
+                                    <th class="border-0 px-4">Compras</th>
+                                    <th class="border-0 px-4">Total (¥)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for client in top_clients %}
+                                <tr>
+                                    <td class="px-4">{{ client.full_name }}</td>
+                                    <td class="px-4">{{ client.total_purchases }}</td>
+                                    <td class="px-4">¥ {{ client.total_spent|round|int }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+// Funções de Filtro e Exportação
+function updateDashboard() {
+    const period = document.getElementById('period-filter').value;
+    const date = document.getElementById('date-filter').value;
+    if (!date) {
+        alert('Por favor, selecione uma data');
+        return;
+    }
+    window.location.href = `?period=${period}&date=${date}`;
+}
+
+// Inicializar data atual no filtro
+document.addEventListener('DOMContentLoaded', function() {
+    const dateFilter = document.getElementById('date-filter');
+    const urlParams = new URLSearchParams(window.location.search);
+    const dateParam = urlParams.get('date');
+    
+    if (dateParam) {
+        dateFilter.value = dateParam;
+    } else {
+        const today = new Date().toISOString().split('T')[0];
+        dateFilter.value = today;
+    }
+    
+    // Selecionar o período correto
+    const periodParam = urlParams.get('period');
+    if (periodParam) {
+        document.getElementById('period-filter').value = periodParam;
+    }
+});
+
+function exportChart(chartId, format) {
+    const canvas = document.getElementById(chartId);
+    if (format === 'png') {
+        const link = document.createElement('a');
+        link.download = `${chartId}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    } else if (format === 'pdf') {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('landscape');
+        const imgData = canvas.toDataURL('image/png', 1.0);
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        const imgWidth = pageWidth - 20;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
+        pdf.save(`${chartId}.pdf`);
+    }
+}
+
+function exportTableToCSV(tableId) {
+    const table = document.getElementById(tableId);
+    let csv = [];
+    const rows = table.querySelectorAll('tr');
+    
+    for (let i = 0; i < rows.length; i++) {
+        const row = [], cols = rows[i].querySelectorAll('td, th');
+        for (let j = 0; j < cols.length; j++) {
+            row.push(cols[j].innerText);
+        }
+        csv.push(row.join(','));
+    }
+    
+    const csvFile = new Blob([csv.join('\n')], {type: 'text/csv'});
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(csvFile);
+    link.download = `${tableId}.csv`;
+    link.click();
+}
+
+// Event Listeners
+document.getElementById('period-filter').addEventListener('change', updateDashboard);
+document.getElementById('date-filter').addEventListener('change', updateDashboard);
+
+// Gráfico de Vendas por Período
+const salesData = {
+    labels: {{ sales_by_date|map(attribute='date')|list|tojson }},
+    datasets: [{
+        label: 'Vendas (¥)',
+        data: {{ sales_by_date|map(attribute='total')|list|tojson }},
+        borderColor: 'rgb(78, 115, 223)',
+        backgroundColor: 'rgba(78, 115, 223, 0.1)',
+        borderWidth: 2,
+        tension: 0.4,
+        fill: true,
+        pointRadius: 4,
+        pointBackgroundColor: 'rgb(78, 115, 223)',
+        pointBorderColor: '#fff',
+        pointHoverRadius: 6,
+        pointHoverBackgroundColor: 'rgb(78, 115, 223)',
+        pointHoverBorderColor: '#fff'
+    }]
+};
+
+const salesCtx = document.getElementById('salesChart').getContext('2d');
+new Chart(salesCtx, {
+    type: 'line',
+    data: salesData,
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: {
+            padding: 10
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: 'rgba(0,0,0,0.05)',
+                    drawBorder: false
+                },
+                ticks: {
+                    padding: 10,
+                    font: {
+                        size: 12,
+                        family: "'Nunito', sans-serif"
+                    }
+                }
+            },
+            x: {
+                grid: {
+                    display: false,
+                    drawBorder: false
+                },
+                ticks: {
+                    padding: 10,
+                    font: {
+                        size: 12,
+                        family: "'Nunito', sans-serif"
+                    }
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                display: true,
+                position: 'top',
+                labels: {
+                    font: {
+                        size: 12,
+                        family: "'Nunito', sans-serif"
+                    },
+                    padding: 20
+                }
+            },
+            tooltip: {
+                mode: 'index',
+                intersect: false,
+                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                titleColor: '#000',
+                bodyColor: '#000',
+                borderColor: 'rgba(0,0,0,0.1)',
+                borderWidth: 1,
+                padding: 10,
+                titleFont: {
+                    size: 14,
+                    family: "'Nunito', sans-serif"
+                },
+                bodyFont: {
+                    size: 13,
+                    family: "'Nunito', sans-serif"
+                }
+            }
+        }
+    }
+});
+
+// Gráfico de Produtos Mais Vendidos
+const productsData = {
+    labels: {{ top_products|map(attribute='name')|list|tojson }},
+    datasets: [{
+        label: 'Quantidade Vendida',
+        data: {{ top_products|map(attribute='total_quantity')|list|tojson }},
+        backgroundColor: [
+            'rgba(78, 115, 223, 0.8)',
+            'rgba(28, 200, 138, 0.8)',
+            'rgba(246, 194, 62, 0.8)',
+            'rgba(231, 74, 59, 0.8)',
+            'rgba(54, 185, 204, 0.8)'
+        ],
+        borderColor: [
+            'rgba(78, 115, 223, 1)',
+            'rgba(28, 200, 138, 1)',
+            'rgba(246, 194, 62, 1)',
+            'rgba(231, 74, 59, 1)',
+            'rgba(54, 185, 204, 1)'
+        ],
+        borderWidth: 2,
+        borderRadius: 4
+    }]
+};
+
+const productsCtx = document.getElementById('topProductsChart').getContext('2d');
+new Chart(productsCtx, {
+    type: 'bar',
+    data: productsData,
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: {
+            padding: 10
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: 'rgba(0,0,0,0.05)',
+                    drawBorder: false
+                },
+                ticks: {
+                    padding: 10,
+                    font: {
+                        size: 12,
+                        family: "'Nunito', sans-serif"
+                    }
+                }
+            },
+            x: {
+                grid: {
+                    display: false,
+                    drawBorder: false
+                },
+                ticks: {
+                    padding: 10,
+                    font: {
+                        size: 12,
+                        family: "'Nunito', sans-serif"
+                    }
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                display: true,
+                position: 'top',
+                labels: {
+                    font: {
+                        size: 12,
+                        family: "'Nunito', sans-serif"
+                    },
+                    padding: 20
+                }
+            },
+            tooltip: {
+                mode: 'index',
+                intersect: false,
+                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                titleColor: '#000',
+                bodyColor: '#000',
+                borderColor: 'rgba(0,0,0,0.1)',
+                borderWidth: 1,
+                padding: 10,
+                titleFont: {
+                    size: 14,
+                    family: "'Nunito', sans-serif"
+                },
+                bodyFont: {
+                    size: 13,
+                    family: "'Nunito', sans-serif"
+                }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

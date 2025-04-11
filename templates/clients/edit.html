@@ -1,0 +1,257 @@
+{% extends "base.html" %}
+{% block title %}Editar Cliente{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white py-3">
+                    <h4 class="card-title mb-0 fw-bold">Editar Cliente</h4>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" enctype="multipart/form-data" class="needs-validation" novalidate>
+                        {{ form.csrf_token }}
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                            {% if messages %}
+                                {% for category, message in messages %}
+                                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                        {{ message }}
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        {% endwith %}
+                        <div class="mb-3">
+                            <label for="full_name" class="form-label">Nome Completo</label>
+                            <input type="text" class="form-control {% if form.full_name.errors %}is-invalid{% endif %}" id="full_name" name="full_name" value="{{ client.full_name }}" required>
+                            {% if form.full_name.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.full_name.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label for="japan_address" class="form-label">Endereço no Japão</label>
+                            <input type="text" class="form-control" id="japan_address" name="japan_address" value="{{ client.japan_address }}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="japan_phone" class="form-label">Telefone no Japão</label>
+                            <input type="tel" class="form-control" id="japan_phone" name="japan_phone" value="{{ client.japan_phone }}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="japan_id" class="form-label">ID Japonês</label>
+                            <input type="text" class="form-control" id="japan_id" name="japan_id" value="{{ client.japan_id }}" required>
+                            <div class="form-text">Número de identificação único no Japão</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email" value="{{ client.email }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="images" class="form-label">Fotos do Cliente</label>
+                            <style>
+                            .image-scroll-container {
+                                height: 200px;
+                                overflow-x: auto;
+                                white-space: nowrap;
+                                scrollbar-width: thin;
+                                scrollbar-color: #6c757d #f8f9fa;
+                            }
+                            .image-scroll-container::-webkit-scrollbar {
+                                height: 8px;
+                            }
+                            .image-scroll-container::-webkit-scrollbar-track {
+                                background: #f8f9fa;
+                                border-radius: 4px;
+                            }
+                            .image-scroll-container::-webkit-scrollbar-thumb {
+                                background-color: #6c757d;
+                                border-radius: 4px;
+                            }
+                            .image-scroll-container img {
+                                transition: transform 0.2s;
+                                margin-right: 4px;
+                            }
+                            .image-scroll-container img:hover {
+                                transform: scale(1.05);
+                            }
+                            .image-container {
+                                display: inline-block;
+                                position: relative;
+                            }
+                            .delete-image {
+                                position: absolute;
+                                top: 5px;
+                                right: 5px;
+                                background-color: rgba(255, 0, 0, 0.7);
+                                color: white;
+                                border: none;
+                                border-radius: 50%;
+                                width: 24px;
+                                height: 24px;
+                                cursor: pointer;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                font-size: 14px;
+                            }
+                            .delete-image:hover {
+                                background-color: rgba(255, 0, 0, 0.9);
+                            }
+                            </style>
+                            {% if client.images %}
+                            <div class="image-scroll-container mb-2">
+                                {% for image in client.images %}
+                                <div class="image-container">
+                                    <img src="{{ url_for('clients.get_client_image', image_id=image.id) }}" 
+                                         alt="{{ client.full_name }}" 
+                                         class="d-inline-block" 
+                                         style="height: 200px; width: auto; object-fit: cover;">
+                                    <button type="button" class="delete-image" 
+                                            onclick="deleteImage({{ image.id }}, this)">&times;</button>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="dropzone-container" id="dropzone">
+                                <div class="dropzone-area">
+                                    <i class="fas fa-cloud-upload-alt fa-2x mb-2"></i>
+                                    <p>Arraste e solte as imagens aqui ou clique para selecionar</p>
+                                    <input type="file" class="form-control d-none" id="images" name="images[]" accept="image/*" multiple>
+                                </div>
+                                <div id="preview-container" class="image-preview-container"></div>
+                            </div>
+                            <div class="form-text">Formatos aceitos: PNG, JPG, JPEG, GIF. Você pode selecionar até 5 imagens.</div>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-check me-2"></i>Salvar Alterações
+                            </button>
+                            <a href="{{ url_for('clients.list_clients') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i>Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('japan_phone').addEventListener('input', function(e) {
+    // Formato básico para número de telefone japonês
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length > 0) {
+        if (value.length <= 3) {
+            value = value;
+        } else if (value.length <= 7) {
+            value = value.slice(0, 3) + '-' + value.slice(3);
+        } else {
+            value = value.slice(0, 3) + '-' + value.slice(3, 7) + '-' + value.slice(7, 11);
+        }
+    }
+    e.target.value = value;
+});
+
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('images');
+const previewContainer = document.getElementById('preview-container');
+let files = [];
+
+dropzone.addEventListener('click', () => fileInput.click());
+
+dropzone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropzone.classList.add('dragover');
+});
+
+dropzone.addEventListener('dragleave', () => {
+    dropzone.classList.remove('dragover');
+});
+
+dropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropzone.classList.remove('dragover');
+    const newFiles = Array.from(e.dataTransfer.files).filter(file => file.type.startsWith('image/'));
+    handleFiles(newFiles);
+});
+
+fileInput.addEventListener('change', (e) => {
+    const newFiles = Array.from(e.target.files);
+    handleFiles(newFiles);
+});
+
+function handleFiles(newFiles) {
+    const currentImageCount = document.querySelectorAll('.image-container').length;
+    if (currentImageCount + files.length + newFiles.length > 5) {
+        alert('Você pode ter no máximo 5 imagens.');
+        return;
+    }
+
+    newFiles.forEach(file => {
+        if (!file.type.startsWith('image/')) {
+            alert('Por favor, selecione apenas arquivos de imagem.');
+            return;
+        }
+
+        files.push(file);
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const preview = document.createElement('div');
+            preview.className = 'image-preview';
+            preview.innerHTML = `
+                <img src="${e.target.result}" alt="Preview">
+                <button type="button" class="remove-image" data-filename="${file.name}">&times;</button>
+            `;
+            previewContainer.appendChild(preview);
+
+            preview.querySelector('.remove-image').addEventListener('click', function() {
+                const filename = this.dataset.filename;
+                files = files.filter(f => f.name !== filename);
+                preview.remove();
+                updateFileInput();
+            });
+        };
+        reader.readAsDataURL(file);
+    });
+
+    updateFileInput();
+}
+
+function updateFileInput() {
+    const dataTransfer = new DataTransfer();
+    files.forEach(file => dataTransfer.items.add(file));
+    fileInput.files = dataTransfer.files;
+}
+
+function deleteImage(imageId, button) {
+    if (confirm('Tem certeza que deseja excluir esta imagem?')) {
+        fetch(`/clients/delete-image/${imageId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'  
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const imageContainer = button.parentElement;
+                imageContainer.remove();
+            } else {
+                alert('Erro ao excluir imagem. Por favor, tente novamente.');
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao excluir imagem. Por favor, tente novamente.');
+        });
+    }
+}
+</script>
+{% endblock %}

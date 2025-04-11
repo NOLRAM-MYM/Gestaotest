@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Gestão - {% block title %}{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/styles.css') }}" rel="stylesheet">
+    <style>
+        .sidebar {
+            min-height: calc(100vh - 56px);
+            background-color: var(--bg-secondary);
+            transition: all var(--transition-normal);
+            width: 250px;
+            position: fixed;
+            left: 0;
+            z-index: 1000;
+        }
+        .sidebar.collapsed {
+            width: 60px;
+            padding: 0.5rem 0;
+        }
+        .sidebar.collapsed .nav-link {
+            text-align: center;
+            padding: 0.75rem 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 60px;
+        }
+        .sidebar.collapsed .nav-link span {
+            display: none;
+        }
+        .sidebar.collapsed .nav-link i {
+            margin: 0 auto !important;
+            font-size: 1.2em;
+            display: block;
+        }
+        .content {
+            padding: 20px;
+            margin-left: 250px;
+            transition: all 0.3s ease;
+            width: calc(100% - 250px);
+            min-height: calc(100vh - 56px);
+            overflow-x: hidden;
+        }
+        .content.expanded {
+            margin-left: 60px;
+            width: calc(100% - 60px);
+        }
+        .nav-link {
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+        }
+        .nav-link:hover {
+            background-color: var(--bg-tertiary);
+            color: var(--primary);
+        }
+        .card-dashboard {
+            transition: transform var(--transition-fast);
+            box-shadow: var(--shadow-sm);
+        }
+        .card-dashboard:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+        }
+        .toggle-sidebar {
+            position: fixed;
+            left: 250px;
+            top: 70px;
+            background: #f8f9fa;
+            border: none;
+            border-radius: 0 4px 4px 0;
+            padding: 10px;
+            z-index: 1000;
+            transition: left 0.3s ease;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        }
+        .toggle-sidebar.collapsed {
+            left: 60px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-dark">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="{{ url_for('index') }}">Sistema de Gestão</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ms-auto">
+                        {% if current_user.is_authenticated %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="#" style="color: red;" onclick="if(confirm('Tem certeza que deseja sair?')) window.location.href='{{ url_for('auth.logout') }}'">
+                                    <i class="fas fa-sign-out-alt me-1"></i>Sair
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="nav-item">
+                                <a class="nav-link" style="color: white;"  href="{{ url_for('auth.login') }}">Login</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    {% if current_user.is_authenticated %}
+    <aside class="sidebar py-3">
+        <nav>
+            <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('dashboard.dashboard') }}">
+                            <i class="fas fa-chart-line me-2"></i><span>Dashboard</span>
+                        </a>
+                    </li>
+                    {% if current_user.is_admin %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('products.list_products') }}">
+                            <i class="fas fa-box me-2"></i><span>Produtos</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if current_user.is_admin %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('products.manage_categories') }}">
+                            <i class="fas fa-tags me-2"></i><span>Categorias</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('products.gallery_products') }}">
+                            <i class="fas fa-images me-2"></i><span>Galeria de Produtos</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('clients.list_clients') }}">
+                            <i class="fas fa-users me-2"></i><span>Clientes</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('sales.list_sales') }}">
+                            <i class="fas fa-shopping-cart me-2"></i><span>Vendas</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('sales.create_sale') }}">
+                            <i class="fas fa-plus-circle me-2"></i><span>Nova Venda</span>
+                        </a>
+                    </li>
+                    {% if current_user.is_admin %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin.list_users') }}">
+                            <i class="fas fa-users me-2"></i><span>Gerenciar Usuários</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin.list_admins') }}">
+                            <i class="fas fa-user-shield me-2"></i><span>Gerenciar Administradores</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+        </nav>
+    </aside>
+    {% endif %}
+    
+    <main class="container-fluid">
+        <section class="row">
+            <article class="{% if current_user.is_authenticated %}content{% else %}col-12{% endif %}">
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                {% block content %}{% endblock %}
+            </article>
+        </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    {% block scripts %}{% endblock %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            {% if current_user.is_authenticated %}
+            const sidebar = document.querySelector('.sidebar');
+            const content = document.querySelector('.content');
+            const toggleBtn = document.createElement('button');
+            toggleBtn.className = 'toggle-sidebar';
+            toggleBtn.innerHTML = '<i class="fas fa-chevron-left"></i>';
+            document.body.appendChild(toggleBtn);
+
+            toggleBtn.addEventListener('click', function() {
+                sidebar.classList.toggle('collapsed');
+                content.classList.toggle('expanded');
+                toggleBtn.classList.toggle('collapsed');
+                const icon = toggleBtn.querySelector('i');
+                if (sidebar.classList.contains('collapsed')) {
+                    icon.className = 'fas fa-chevron-right';
+                } else {
+                    icon.className = 'fas fa-chevron-left';
+                }
+            });
+            {% endif %}
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,522 @@
+{% extends "base.html" %}
+{% block title %}Vendas{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="container-fluid px-4 py-3">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="text-primary fw-bold">Vendas</h2>
+            <div class="d-flex gap-2">
+                <div class="btn-group shadow-sm">
+                    <button class="btn btn-outline-secondary" onclick="exportToCSV()">
+                        <i class="fas fa-file-csv"></i> CSV
+                    </button>
+                    <button class="btn btn-outline-secondary" onclick="exportToPDF()">
+                        <i class="fas fa-file-pdf"></i> PDF
+                    </button>
+                    <button class="btn btn-outline-secondary" onclick="exportToExcel()">
+                        <i class="fas fa-file-excel"></i> Excel
+                    </button>
+                </div>
+                <a href="{{ url_for('sales.create_sale') }}" class="btn btn-primary shadow-sm">
+                    <i class="fas fa-plus"></i> Nova Venda
+                </a>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white py-3">
+                <h5 class="mb-0 fw-bold">Filtros</h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Cliente</label>
+                        <input type="text" class="form-control" id="filterClient" placeholder="Filtrar por cliente">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Produto</label>
+                        <input type="text" class="form-control" id="filterProduct" placeholder="Filtrar por produto">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Status</label>
+                        <select class="form-select" id="filterStatus">
+                            <option value="">Todos</option>
+                            <option value="negotiating">Em Negociação</option>
+                            <option value="pending">Pendente</option>
+                            <option value="completed">Finalizada</option>
+                            <option value="cancelled">Cancelada</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Data Inicial</label>
+                        <input type="date" class="form-control" id="filterDateStart">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Data Final</label>
+                        <input type="date" class="form-control" id="filterDateEnd">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Faixa de Preço</label>
+                        <div class="px-4">
+                            <div id="priceSlider"></div>
+                            <div class="d-flex justify-content-between mt-2">
+                                <span>¥ <span id="priceMin">0</span></span>
+                                <span>¥ <span id="priceMax">0</span></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Vendedor</label>
+                        <input type="text" class="form-control" id="filterSeller" placeholder="Filtrar por vendedor">
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button class="btn btn-secondary me-2" onclick="clearFilters()">Limpar Filtros</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-striped table-hover align-middle" id="salesTable">
+                <thead class="table-light" >
+                    <tr>
+                        <th class="text-center" style="width: 10%">ID</th>
+                        <th style="width: 15%">Cliente</th>
+                        <th style="width: 15%">Produto</th>
+                        <th class="text-center" style="width: 8%">Quantidade</th>
+                        <th class="text-end" style="width: 10%">Preço Original</th>
+                        <th class="text-center" style="width: 8%">Desconto</th>
+                        <th class="text-end" style="width: 10%">Preço Final</th>
+                        <th class="text-center" style="width: 8%">Financiado</th>
+                        <th class="text-end" style="width: 10%">Valor Financiado</th>
+                        <th class="text-end" style="width: 10%">Parcela Mensal</th>
+                        <th class="text-center" style="width: 10%">Status</th>
+                        <th style="width: 10%">Vendedor</th>
+                        <th class="text-center" style="width: 12%">Data</th>
+                        <th class="text-center" style="width: 8%">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sale in sales %}
+                    <tr>
+                        <td class="text-center">{{ sale.id }}</td>
+                        <td>{{ sale.client.full_name }}</td>
+                        <td>{{ sale.product.name }}</td>
+                        <td class="text-center">{{ sale.quantity }}</td>
+                        <td class="text-end">¥ {{ sale.original_price|round|int }}</td>
+                        <td class="text-center">{{ "%.1f"|format(sale.discount_percentage) }}%</td>
+                        <td class="text-end">¥ {{ sale.total_price|round|int }}</td>
+                        <td class="text-center">
+                            {% if sale.is_financed %}
+                                <span class="badge bg-info">Sim</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Não</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            {% if sale.is_financed %}
+                                ¥ {{ sale.total_financed|round|int }}
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            {% if sale.is_financed %}
+                                ¥ {{ sale.monthly_payment|round|int }}
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if sale.status == 'negotiating' %}
+                                <span class="badge bg-info">Em Negociação</span>
+                            {% elif sale.status == 'pending' %}
+                                <span class="badge bg-warning">Pendente</span>
+                            {% elif sale.status == 'completed' %}
+                                <span class="badge bg-success">Finalizada</span>
+                            {% elif sale.status == 'cancelled' %}
+                                <span class="badge bg-danger">Cancelada</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ sale.seller.username }}</td>
+                        <td class="text-center">{{ sale.sale_date.strftime('%d/%m/%Y') }}</td>
+                        <td class="text-center">
+                            {% if sale.status == 'pending' or sale.status == 'negotiating' %}
+                            <div class="btn-group">
+                                <a href="{{ url_for('sales.edit_sale', id=sale.id) }}" class="btn btn-sm btn-outline-primary" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <form action="{{ url_for('sales.complete_sale', id=sale.id) }}" method="POST" class="d-inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-success" title="Finalizar" onclick="return confirm('Deseja finalizar esta venda?')">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                </form>
+                                <form action="{{ url_for('sales.cancel_sale', id=sale.id) }}" method="POST" class="d-inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Cancelar" onclick="return confirm('Deseja cancelar esta venda?')">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </form>
+                            </div>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+</div>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nouislider@14.6.3/distribute/nouislider.min.css">
+<script src="https://cdn.jsdelivr.net/npm/nouislider@14.6.3/distribute/nouislider.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+function getVisibleTableData() {
+    const rows = Array.from(document.querySelectorAll('#salesTable tbody tr')).filter(row => row.style.display !== 'none');
+    const headers = Array.from(document.querySelectorAll('#salesTable thead th')).map(th => th.textContent.trim());
+    const data = rows.map(row => Array.from(row.cells).map(cell => cell.textContent.trim()));
+    return { headers, data };
+}
+
+function exportToCSV() {
+    const { headers, data } = getVisibleTableData();
+    // Escapar campos que contêm vírgulas ou quebras de linha
+    const escapeCsvField = (field) => {
+        if (field.includes(',') || field.includes('\n') || field.includes('"')) {
+            return `"${field.replace(/"/g, '""')}"`;
+        }
+        return field;
+    };
+    
+    const csvContent = [
+        headers.map(escapeCsvField).join(','),
+        ...data.map(row => row.map(escapeCsvField).join(','))
+    ].join('\n');
+
+    const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'vendas.csv';
+    link.click();
+}
+
+function exportToPDF() {
+    const { headers, data } = getVisibleTableData();
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('l', 'mm', 'a4');
+
+    const columnStyles = {};
+    headers.forEach((_, index) => {
+        columnStyles[index] = {
+            cellWidth: index === 1 || index === 2 ? 30 : 'auto',
+            cellPadding: 2,
+            fontSize: 7,
+            overflow: 'linebreak'
+        };
+    });
+
+    doc.autoTable({
+        head: [headers],
+        body: data,
+        theme: 'grid',
+        styles: { fontSize: 7, font: 'helvetica' },
+        headStyles: {
+            fillColor: [13, 110, 253],
+            fontSize: 8,
+            fontStyle: 'bold',
+            halign: 'center'
+        },
+        columnStyles: columnStyles,
+        margin: { top: 10, right: 7, bottom: 10, left: 7 },
+        didDrawPage: function(data) {
+            doc.setFontSize(10);
+            doc.text('Relatório de Vendas', data.settings.margin.left, 7);
+        }
+    });
+
+    doc.save('vendas.pdf');
+}
+
+function exportToExcel() {
+    const { headers, data } = getVisibleTableData();
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
+    const wb = XLSX.utils.book_new();
+    
+    // Configurar larguras das colunas baseado no conteúdo
+    const maxCharLengths = new Array(headers.length).fill(0);
+    [headers, ...data].forEach(row => {
+        row.forEach((cell, i) => {
+            const length = cell.toString().length;
+            maxCharLengths[i] = Math.max(maxCharLengths[i], length);
+        });
+    });
+    
+    // Definir larguras das colunas com um mínimo de 10 e máximo de 50 caracteres
+    ws['!cols'] = maxCharLengths.map(length => ({
+        wch: Math.min(Math.max(length + 2, 10), 50)
+    }));
+    
+    // Aplicar estilos
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    for (let C = range.s.c; C <= range.e.c; ++C) {
+        const address = XLSX.utils.encode_col(C) + '1';
+        if (!ws[address]) continue;
+        ws[address].s = {
+            fill: { fgColor: { rgb: "0D6EFD" } },
+            font: { color: { rgb: "FFFFFF" }, bold: true },
+            alignment: { horizontal: "center", vertical: "center" }
+        };
+    }
+    
+    XLSX.utils.book_append_sheet(wb, ws, 'Vendas');
+    XLSX.writeFile(wb, 'vendas.xlsx');
+}
+</script>
+<style>
+.table-responsive {
+    margin-bottom: 2rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 0.5rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+}
+
+#salesTable {
+    font-size: 0.9rem;
+    width: 100%;
+    min-width: 1200px;
+    margin-bottom: 0;
+}
+
+#salesTable th,
+#salesTable td {
+    padding: 1rem;
+    vertical-align: middle;
+    white-space: nowrap;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#salesTable td:nth-child(2),
+#salesTable td:nth-child(3) {
+    white-space: normal;
+    min-width: 150px;
+}
+
+#salesTable .text-end {
+    padding-right: 1.5rem;
+}
+
+#salesTable thead th {
+    font-weight: 600;
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    color: #495057;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.5px;
+}
+
+#salesTable tbody tr:hover {
+    background-color: rgba(13, 110, 253, 0.05);
+    transition: background-color 0.2s ease;
+}
+
+#salesTable .badge {
+    font-size: 0.8rem;
+    padding: 0.5em 0.8em;
+    white-space: nowrap;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+}
+
+#salesTable .btn-group {
+    display: inline-flex;
+    gap: 0.25rem;
+}
+
+#salesTable .btn-sm {
+    padding: 0.4rem 0.6rem;
+    transition: all 0.2s ease;
+}
+
+#salesTable .btn-sm:hover {
+    transform: translateY(-1px);
+}
+</style>
+<style>
+    .noUi-connect {
+        background: #0d6efd;
+    }
+    .noUi-handle {
+        border: 2px solid #0d6efd;
+        background: #fff;
+        border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+    }
+    .noUi-handle:hover {
+        transform: scale(1.1);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    .noUi-handle:before,
+    .noUi-handle:after {
+        display: none;
+    }
+    .noUi-target {
+        border-radius: 8px;
+        border: none;
+        box-shadow: none;
+        background: #e9ecef;
+    }
+    .noUi-connects {
+        border-radius: 8px;
+    }
+</style>
+
+<script>
+function normalizeText(text) {
+    return text.normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim();
+}
+
+// Obter os preços mínimo e máximo das vendas
+const prices = Array.from(document.querySelectorAll('#salesTable tbody tr')).map(row => {
+    return parseFloat(row.cells[6].textContent.replace('¥', '').trim());
+});
+const minPrice = Math.min(...prices);
+const maxPrice = Math.max(...prices);
+
+// Inicializar o slider de preço
+const priceSlider = document.getElementById('priceSlider');
+noUiSlider.create(priceSlider, {
+    start: [minPrice, maxPrice],
+    connect: true,
+    step: 1000,
+    range: {
+        'min': minPrice,
+        'max': maxPrice
+    },
+    format: {
+        to: function (value) {
+            return Math.round(value);
+        },
+        from: function (value) {
+            return Number(value);
+        }
+    }
+});
+
+// Atualizar os valores exibidos
+priceSlider.noUiSlider.on('update', function (values) {
+    document.getElementById('priceMin').textContent = new Intl.NumberFormat('ja-JP').format(values[0]);
+    document.getElementById('priceMax').textContent = new Intl.NumberFormat('ja-JP').format(values[1]);
+    applyFilters();
+});
+
+window.onload = function() {
+    sortTableByID();
+};
+
+function sortTableByID() {
+    const tbody = document.querySelector('#salesTable tbody');
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    
+    rows.sort((a, b) => {
+        const idA = parseInt(a.cells[0].textContent);
+        const idB = parseInt(b.cells[0].textContent);
+        return idB - idA;
+    });
+    
+    rows.forEach(row => tbody.appendChild(row));
+}
+
+function applyFilters() {
+    const rows = document.querySelectorAll('#salesTable tbody tr');
+    const clientFilter = normalizeText(document.getElementById('filterClient').value);
+    const productFilter = normalizeText(document.getElementById('filterProduct').value);
+    const statusFilter = document.getElementById('filterStatus').value;
+    const dateStartFilter = document.getElementById('filterDateStart').value;
+    const dateEndFilter = document.getElementById('filterDateEnd').value;
+    const [priceMinFilter, priceMaxFilter] = priceSlider.noUiSlider.get().map(Number);
+    const sellerFilter = normalizeText(document.getElementById('filterSeller').value);
+
+    rows.forEach(row => {
+        const client = normalizeText(row.cells[1].textContent);
+        const product = normalizeText(row.cells[2].textContent);
+        const status = row.cells[10].querySelector('.badge').textContent;
+        const date = row.cells[12].textContent;
+        const price = parseFloat(row.cells[6].textContent.replace('¥', '').trim());
+        const seller = normalizeText(row.cells[11].textContent);
+
+        const matchesClient = client.includes(clientFilter);
+        const matchesProduct = product.includes(productFilter);
+        const matchesStatus = !statusFilter || (
+            (statusFilter === 'negotiating' && status === 'Em Negociação') ||
+            (statusFilter === 'pending' && status === 'Pendente') ||
+            (statusFilter === 'completed' && status === 'Finalizada') ||
+            (statusFilter === 'cancelled' && status === 'Cancelada')
+        );
+        const matchesSeller = sellerFilter === '' || seller.includes(sellerFilter);
+
+        let matchesDate = true;
+        if (dateStartFilter || dateEndFilter) {
+            const saleDate = new Date(date.split(' ')[0].split('/').reverse().join('-'));
+            if (dateStartFilter) {
+                const startDate = new Date(dateStartFilter);
+                matchesDate = matchesDate && saleDate >= startDate;
+            }
+            if (dateEndFilter) {
+                const endDate = new Date(dateEndFilter);
+                matchesDate = matchesDate && saleDate <= endDate;
+            }
+        }
+
+        const matchesPrice = price >= priceMinFilter && price <= priceMaxFilter;
+
+        row.style.display = 
+            matchesClient && 
+            matchesProduct && 
+            matchesStatus && 
+            matchesDate && 
+            matchesPrice && 
+            matchesSeller ? '' : 'none';
+    });
+}
+
+function clearFilters() {
+    document.getElementById('filterClient').value = '';
+    document.getElementById('filterProduct').value = '';
+    document.getElementById('filterStatus').value = '';
+    document.getElementById('filterDateStart').value = '';
+    document.getElementById('filterDateEnd').value = '';
+    priceSlider.noUiSlider.set([minPrice, maxPrice]);
+    document.getElementById('filterSeller').value = '';
+    applyFilters();
+}
+
+// Adicionar eventos de input para todos os filtros
+const filterInputs = [
+    'filterClient',
+    'filterProduct',
+    'filterStatus',
+    'filterDateStart',
+    'filterDateEnd',
+    'filterSeller'
+];
+
+filterInputs.forEach(filterId => {
+    document.getElementById(filterId).addEventListener('input', applyFilters);
+});
+</script>
+{% endblock %}

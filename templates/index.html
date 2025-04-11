@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Início{% endblock %}
+{% block content %}
+<main class="container py-5">
+    {% if current_user.is_authenticated %}
+    <section class="row mb-4">
+        <header class="col-12">
+            <h2 class="text-center mb-4">Bem-vindo ao Sistema de Gestão</h2>
+            <section class="row">
+                <div class="col-md-4 mb-3">
+                    <div class="card card-dashboard h-100">
+                        <div class="card-body text-center">
+                            <i class="fas fa-chart-line fa-3x text-primary mb-3"></i>
+                            <h5 class="card-title">Dashboard</h5>
+                            <p class="card-text">Visualize relatórios e estatísticas importantes do seu negócio.</p>
+                            <a href="{{ url_for('dashboard.dashboard') }}" class="btn btn-primary">Acessar Dashboard</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card card-dashboard h-100">
+                        <div class="card-body text-center">
+                            <i class="fas fa-box fa-3x text-success mb-3"></i>
+                            <h5 class="card-title">Produtos</h5>
+                            <p class="card-text">Gerencie seu catálogo de produtos e controle o estoque.</p>
+                            <a href="{{ url_for('products.list_products') }}" class="btn btn-success">Gerenciar Produtos</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card card-dashboard h-100">
+                        <div class="card-body text-center">
+                            <i class="fas fa-users fa-3x text-info mb-3"></i>
+                            <h5 class="card-title">Clientes</h5>
+                            <p class="card-text">Cadastre e gerencie informações dos seus clientes.</p>
+                            <a href="{{ url_for('clients.list_clients') }}" class="btn btn-info text-white">Gerenciar Clientes</a>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </header>
+    </section>
+    {% else %}
+    <section class="row justify-content-center">
+        <header class="col-md-8 text-center">
+            <h1 class="display-4 mb-4">Sistema de Gestão</h1>
+            <p class="lead mb-4">Uma solução completa para gerenciamento de produtos e clientes.</p>
+            <section class="row">
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <i class="fas fa-box-open fa-3x text-primary mb-3"></i>
+                            <h5>Gestão de Produtos</h5>
+                            <p>Controle seu estoque e catálogo de produtos de forma eficiente.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <i class="fas fa-users fa-3x text-success mb-3"></i>
+                            <h5>Gestão de Clientes</h5>
+                            <p>Mantenha os dados dos seus clientes organizados e atualizados.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <i class="fas fa-chart-bar fa-3x text-info mb-3"></i>
+                            <h5>Relatórios</h5>
+                            <p>Acompanhe o desempenho do seu negócio com relatórios detalhados.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <nav class="mt-4">
+                <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg me-3">Fazer Login</a>
+                <a href="{{ url_for('auth.register') }}" class="btn btn-outline-primary btn-lg">Registrar</a>
+            </nav>
+        </header>
+    </section>
+    {% endif %}
+</main>
+{% endblock %}

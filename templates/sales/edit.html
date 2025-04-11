@@ -1,0 +1,328 @@
+{% extends "base.html" %}
+{% block title %}Editar Venda{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white py-3">
+                    <h4 class="card-title mb-0 fw-bold">Editar Venda #{{ sale.id }}</h4>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" action="{{ url_for('sales.edit_sale', id=sale.id) }}" class="needs-validation" novalidate>
+                        {{ form.csrf_token }}
+                        <div class="mb-3">
+                            {{ form.client_id.label(class="form-label") }}
+                            {{ form.client_id(class="form-select") }}
+                            {% if form.client_id.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.client_id.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.sale_date.label(class="form-label") }}
+                            {{ form.sale_date(class="form-control", type="date") }}
+                            {% if form.sale_date.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.sale_date.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.product_id.label(class="form-label") }}
+                            {{ form.product_id(class="form-select", onchange="updatePrice()") }}
+                            {% if form.product_id.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.product_id.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.quantity.label(class="form-label") }}
+                            {{ form.quantity(class="form-control", type="number", min="1", onchange="updatePrice()", onkeyup="updatePrice()") }}
+                            {% if form.quantity.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.quantity.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.discount_percentage.label(class="form-label") }}
+                            {{ form.discount_percentage(class="form-control", type="number", min="0", max="100", step="0.1", onchange="updatePrice()", onkeyup="updatePrice()") }}
+                            {% if form.discount_percentage.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.discount_percentage.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Removendo divs vazias que podem causar problemas -->
+                        <div class="mb-3">
+                            <div class="alert alert-info shadow-sm">
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <strong class="d-block mb-2">Valor Original:</strong>
+                                        <div class="h5 mb-0">¥ <span id="originalPriceYen">0,00</span></div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <strong class="d-block mb-2">Desconto:</strong>
+                                        <div class="h5 mb-0">¥ <span id="discountAmountYen">0,00</span></div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <strong class="d-block mb-2">Valor Final:</strong>
+                                        <div class="h5 mb-0">¥ <span id="finalPriceYen">0,00</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.notes.label(class="form-label") }}
+                            {{ form.notes(class="form-control", rows="3") }}
+                            {% if form.notes.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.notes.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                {{ form.is_financed(class="form-check-input", onchange="toggleFinancing()") }}
+                                {{ form.is_financed.label(class="form-check-label") }}
+                            </div>
+                        </div>
+
+                        <div id="financing-fields" style="display: none;">
+                            <div class="mb-3">
+                                {{ form.financing_years.label(class="form-label") }}
+                                {{ form.financing_years(class="form-select", onchange="calculateFinancing()") }}
+                            </div>
+
+                            <div class="mb-3">
+                                {{ form.interest_rate.label(class="form-label") }}
+                                {{ form.interest_rate(class="form-control", type="number", step="0.01", min="0", max="100", onchange="calculateFinancing()", onkeyup="calculateFinancing()") }}
+                            </div>
+
+                            <div class="alert alert-info shadow-sm">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <strong class="d-block mb-2">Valor Total Financiado:</strong>
+                                        <div class="h5 mb-0">¥ <span id="totalFinancedYen">0,00</span></div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <strong class="d-block mb-2">Parcela Mensal:</strong>
+                                        <div class="h5 mb-0">¥ <span id="monthlyPaymentYen">0,00</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                                <i class="fas fa-check me-2"></i><span class="btn-text">Salvar Alteração</span>
+                                <span class="spinner-border spinner-border-sm ms-2 d-none" role="status" aria-hidden="true"></span>
+                            </button>
+                            <a href="{{ url_for('sales.list_sales') }}" class="btn btn-outline-secondary">Cancelar</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function formatYen(value) {
+    // Arredonda para 0 casas decimais
+    const roundedValue = Math.round(value);
+    return new Intl.NumberFormat('ja-JP', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    }).format(roundedValue);
+}
+
+function updatePrice() {
+    const productSelect = document.getElementById('product_id');
+    const quantityInput = document.getElementById('quantity');
+    const discountInput = document.getElementById('discount_percentage');
+    
+    if (!productSelect.value || !quantityInput.value) return;
+    
+    const selectedOption = productSelect.options[productSelect.selectedIndex];
+    const priceText = selectedOption.text.split('¥')[1];
+    const price = parseFloat(priceText);
+    const quantity = parseInt(quantityInput.value);
+    const discount = parseFloat(discountInput.value || 0);
+    
+    const originalPrice = price * quantity;
+    const discountAmount = (originalPrice * discount) / 100;
+    const finalPrice = originalPrice - discountAmount;
+
+    document.getElementById('originalPriceYen').textContent = formatYen(originalPrice);
+    document.getElementById('discountAmountYen').textContent = formatYen(discountAmount);
+    document.getElementById('finalPriceYen').textContent = formatYen(finalPrice);
+
+    calculateFinancing();
+}
+
+function toggleFinancing() {
+    const isFinanced = document.getElementById('is_financed').checked;
+    const financingFields = document.getElementById('financing-fields');
+    const financingInputs = financingFields.querySelectorAll('input, select');
+    
+    financingFields.style.display = isFinanced ? 'block' : 'none';
+    
+    financingInputs.forEach(input => {
+        if (!isFinanced) {
+            input.required = false;
+            input.value = '';
+            // Garantir que os valores sejam nulos quando o financiamento está desativado
+            if (input.tagName.toLowerCase() === 'select') {
+                input.selectedIndex = 0;
+            }
+        } else {
+            input.required = true;
+        }
+    });
+    
+    calculateFinancing();
+}
+
+function calculateFinancing() {
+    const isFinanced = document.getElementById('is_financed').checked;
+    if (!isFinanced) {
+        document.getElementById('totalFinancedYen').textContent = '0,00';
+        document.getElementById('monthlyPaymentYen').textContent = '0,00';
+        return;
+    }
+
+    const finalPriceText = document.getElementById('finalPriceYen').textContent;
+    const finalPrice = parseFloat(finalPriceText.replace(/,/g, ''));
+    const years = parseInt(document.getElementById('financing_years').value);
+    const annualRate = parseFloat(document.getElementById('interest_rate').value || 0) / 100;
+    
+    if (isNaN(finalPrice) || isNaN(years) || isNaN(annualRate)) return;
+
+    const monthlyRate = annualRate / 12;
+    const numPayments = years * 12;
+    
+    let monthlyPayment = finalPrice;
+    let totalFinanced = finalPrice;
+
+    if (monthlyRate > 0) {
+        monthlyPayment = finalPrice * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
+        totalFinanced = monthlyPayment * numPayments;
+    } else {
+        monthlyPayment = finalPrice / numPayments;
+        totalFinanced = finalPrice;
+    }
+
+    document.getElementById('totalFinancedYen').textContent = formatYen(totalFinanced);
+    document.getElementById('monthlyPaymentYen').textContent = formatYen(monthlyPayment);
+}
+
+// Inicializar os valores quando a página carregar
+document.addEventListener('DOMContentLoaded', function() {
+    updatePrice();
+    toggleFinancing();
+
+    // Atualizar o formulário para garantir que os dados sejam enviados
+    const form = document.querySelector('form');
+    const submitBtn = document.getElementById('submitBtn');
+    const btnText = submitBtn.querySelector('.btn-text');
+    const spinner = submitBtn.querySelector('.spinner-border');
+
+    form.addEventListener('submit', function(event) {
+        // Prevenir o envio padrão para fazer validações
+        event.preventDefault();
+        
+        const isFinanced = document.getElementById('is_financed').checked;
+        const financingFields = document.getElementById('financing-fields');
+        const financingInputs = financingFields.querySelectorAll('input, select');
+
+        // Limpar campos de financiamento se não estiver marcado
+        if (!isFinanced) {
+            financingInputs.forEach(input => {
+                input.value = '';
+                if (input.tagName.toLowerCase() === 'select') {
+                    input.selectedIndex = 0;
+                }
+            });
+        } else {
+            // Validar campos de financiamento apenas se estiver marcado
+            const years = document.getElementById('financing_years').value;
+            const rate = document.getElementById('interest_rate').value;
+
+            if (!years || !rate) {
+                alert('Por favor, preencha todos os campos de financiamento.');
+                return;
+            }
+
+            const yearsFloat = parseFloat(years);
+            const rateFloat = parseFloat(rate);
+
+            if (yearsFloat <= 0 || rateFloat < 0) {
+                alert('O período de financiamento deve ser maior que zero e a taxa de juros não pode ser negativa.');
+                return;
+            }
+        }
+
+        if (!this.checkValidity()) {
+            this.classList.add('was-validated');
+            return;
+        }
+
+        // Desabilitar o botão e mostrar o spinner
+        submitBtn.disabled = true;
+        btnText.textContent = 'Salvando...';
+        spinner.classList.remove('d-none');
+
+        // Enviar o formulário manualmente
+        this.classList.add('was-validated');
+        
+        // Garantir que os valores sejam enviados corretamente
+        if (!isFinanced) {
+            // Definir valores padrão para campos de financiamento quando não está financiado
+            document.getElementById('financing_years').value = "1";
+            document.getElementById('interest_rate').value = "0";
+        }
+        
+        this.submit();
+    });
+
+    // Garantir que os campos de financiamento sejam validados
+    const isFinancedCheckbox = document.getElementById('is_financed');
+    const financingFields = document.getElementById('financing-fields');
+    
+    isFinancedCheckbox.addEventListener('change', function() {
+        const financingInputs = financingFields.querySelectorAll('input, select');
+        financingInputs.forEach(input => {
+            input.required = this.checked;
+            if (!this.checked) {
+                input.value = '';
+            }
+        });
+        calculateFinancing();
+    });
+});
+</script>
+{% endblock %}

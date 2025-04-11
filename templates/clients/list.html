@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+{% block title %}Clientes{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-primary fw-bold">Clientes</h2>
+        <div class="d-flex gap-2">
+            <div class="btn-group">
+                <button class="btn btn-outline-secondary" onclick="exportToCSV()">
+                    <i class="fas fa-file-csv"></i> CSV
+                </button>
+                <button class="btn btn-outline-secondary" onclick="exportToPDF()">
+                    <i class="fas fa-file-pdf"></i> PDF
+                </button>
+                <button class="btn btn-outline-secondary" onclick="exportToExcel()">
+                    <i class="fas fa-file-excel"></i> Excel
+                </button>
+            </div>
+            <a href="{{ url_for('clients.create_client') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Novo Cliente
+            </a>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Filtros</h5>
+        </div>
+    </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Nome</label>
+                    <input type="text" class="form-control" id="filterName" placeholder="Filtrar por nome">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Endereço</label>
+                    <input type="text" class="form-control" id="filterAddress" placeholder="Filtrar por endereço">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Telefone</label>
+                    <input type="text" class="form-control" id="filterPhone" placeholder="Filtrar por telefone">
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button class="btn btn-secondary me-2" onclick="clearFilters()">Limpar Filtros</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row" id="clientsGrid">
+        {% for client in clients %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <style>
+                .image-scroll-container {
+                    height: 200px;
+                    overflow-x: auto;
+                    white-space: nowrap;
+                    scrollbar-width: thin;
+                    scrollbar-color: #6c757d #f8f9fa;
+                }
+                .image-scroll-container::-webkit-scrollbar {
+                    height: 8px;
+                }
+                .image-scroll-container::-webkit-scrollbar-track {
+                    background: #f8f9fa;
+                    border-radius: 4px;
+                }
+                .image-scroll-container::-webkit-scrollbar-thumb {
+                    background-color: #6c757d;
+                    border-radius: 4px;
+                }
+                .image-scroll-container img {
+                    transition: transform 0.2s;
+                    margin-right: 4px;
+                }
+                .image-scroll-container img:hover {
+                    transform: scale(1.05);
+                }
+                </style>
+                <div class="image-scroll-container">
+                {% if client.images %}
+                    {% for image in client.images %}
+                    <img src="{{ url_for('clients.get_client_image', image_id=image.id) }}" 
+                         class="d-inline-block" 
+                         alt="{{ client.full_name }}" 
+                         style="height: 200px; width: auto; object-fit: cover;">
+                    {% endfor %}
+                {% else %}
+                    <div class="d-flex align-items-center justify-content-center h-100 w-100">
+                        <i class="fas fa-user fa-3x text-secondary"></i>
+                    </div>
+                {% endif %}
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ client.full_name }}</h5>
+                    <p class="card-text mb-1"><i class="fas fa-map-marker-alt me-2"></i>{{ client.japan_address or 'Endereço não informado' }}</p>
+                    <p class="card-text mb-1"><i class="fas fa-phone me-2"></i>{{ client.japan_phone or 'Telefone não informado' }}</p>
+                    <p class="card-text mb-1"><i class="fas fa-id-card me-2"></i>{{ client.japan_id }}</p>
+                    <p class="card-text"><i class="fas fa-envelope me-2"></i>{{ client.email }}</p>
+                </div>
+                {% if current_user.is_admin %}
+                <div class="card-footer bg-transparent">
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('clients.edit_client', id=client.id) }}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-edit me-1"></i>Editar
+                        </a>
+                        <form action="{{ url_for('clients.delete_client', id=client.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Tem certeza que deseja excluir este cliente?');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                <i class="fas fa-trash me-1"></i>Excluir
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nouislider@14.6.3/distribute/nouislider.min.css">
+<script src="https://cdn.jsdelivr.net/npm/nouislider@14.6.3/distribute/nouislider.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+function getVisibleClientData() {
+    const cards = Array.from(document.querySelectorAll('#clientsGrid .card')).filter(card => card.closest('.col-md-4').style.display !== 'none');
+    const headers = ['Nome', 'Endereço', 'Telefone', 'ID', 'Email'];
+    const data = cards.map(card => [
+        card.querySelector('.card-title').textContent,
+        card.querySelector('.fa-map-marker-alt').parentNode.textContent.trim(),
+        card.querySelector('.fa-phone').parentNode.textContent.trim(),
+        card.querySelector('.fa-id-card').parentNode.textContent.trim(),
+        card.querySelector('.fa-envelope').parentNode.textContent.trim()
+    ]);
+    return { headers, data };
+}
+
+function exportToCSV() {
+    const { headers, data } = getVisibleClientData();
+    const csvContent = [
+        headers.join(','),
+        ...data.map(row => row.join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'clientes.csv';
+    link.click();
+}
+
+function exportToPDF() {
+    const { headers, data } = getVisibleClientData();
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.autoTable({
+        head: [headers],
+        body: data
+    });
+    doc.save('clientes.pdf');
+}
+
+function exportToExcel() {
+    const { headers, data } = getVisibleClientData();
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Clientes');
+    XLSX.writeFile(wb, 'clientes.xlsx');
+}
+
+function filterClients() {
+    const nameFilter = document.getElementById('filterName').value.toLowerCase();
+    const addressFilter = document.getElementById('filterAddress').value.toLowerCase();
+    const phoneFilter = document.getElementById('filterPhone').value.toLowerCase();
+
+    document.querySelectorAll('#clientsGrid .col-md-4').forEach(card => {
+        const name = card.querySelector('.card-title').textContent.toLowerCase();
+        const address = card.querySelector('.fa-map-marker-alt').parentNode.textContent.toLowerCase();
+        const phone = card.querySelector('.fa-phone').parentNode.textContent.toLowerCase();
+
+        const matchesName = name.includes(nameFilter);
+        const matchesAddress = address.includes(addressFilter);
+        const matchesPhone = phone.includes(phoneFilter);
+
+        card.style.display = (matchesName && matchesAddress && matchesPhone) ? '' : 'none';
+    });
+}
+
+function clearFilters() {
+    document.getElementById('filterName').value = '';
+    document.getElementById('filterAddress').value = '';
+    document.getElementById('filterPhone').value = '';
+    document.querySelectorAll('#clientsGrid .col-md-4').forEach(card => card.style.display = '');
+}
+
+// Adiciona eventos de filtro
+document.getElementById('filterName').addEventListener('input', filterClients);
+document.getElementById('filterAddress').addEventListener('input', filterClients);
+document.getElementById('filterPhone').addEventListener('input', filterClients);
+</script>
+{% endblock %}

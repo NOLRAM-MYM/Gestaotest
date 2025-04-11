@@ -1,0 +1,328 @@
+{% extends "base.html" %}
+{% block title %}Produtos<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nouislider@14.6.3/distribute/nouislider.min.css">
+<script src="https://cdn.jsdelivr.net/npm/nouislider@14.6.3/distribute/nouislider.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+function getVisibleProductData() {
+    const cards = Array.from(document.querySelectorAll('#productsGrid .card')).filter(card => card.closest('.col-md-4').style.display !== 'none');
+    const headers = ['Nome', 'Descrição', 'Categoria', 'Preço', 'Total Custos', 'Data de Entrada'];
+    const data = cards.map(card => {
+        const cardBody = card.querySelector('.card-body');
+        const category = cardBody.querySelector('.badge.bg-info').textContent.trim();
+        const price = cardBody.querySelector('h6.mb-0').textContent.replace('Preço: ¥', '').trim();
+        const totalCost = cardBody.querySelector('.small.text-muted div:last-child').textContent.replace('Total Custos: ¥', '').trim();
+        const entryDate = cardBody.querySelector('.small.text-muted div:first-child').textContent.replace('Data de Entrada:', '').trim();
+        
+        return [
+            card.querySelector('.card-title').textContent,
+            card.querySelector('.card-text').textContent,
+            category,
+            price,
+            totalCost,
+            entryDate
+        ];
+    });
+    return { headers, data };
+}
+
+function exportToCSV() {
+    const { headers, data } = getVisibleProductData();
+    const csvContent = [
+        headers.join(','),
+        ...data.map(row => row.join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'produtos.csv';
+    link.click();
+}
+
+function exportToPDF() {
+    const { headers, data } = getVisibleProductData();
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.autoTable({
+        head: [headers],
+        body: data
+    });
+    doc.save('produtos.pdf');
+}
+
+function exportToExcel() {
+    const { headers, data } = getVisibleProductData();
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Produtos');
+    XLSX.writeFile(wb, 'produtos.xlsx');
+}
+
+function filterProducts() {
+    const nameFilter = document.getElementById('filterName').value.toLowerCase();
+    const descriptionFilter = document.getElementById('filterDescription').value.toLowerCase();
+    const categoryFilter = document.getElementById('filterCategory').value.toLowerCase();
+
+    document.querySelectorAll('#productsGrid .col-md-4').forEach(card => {
+        const name = card.querySelector('.card-title').textContent.toLowerCase();
+        const description = card.querySelector('.card-text').textContent.toLowerCase();
+        const category = card.querySelector('.card-body').textContent.split('\n')[2].trim().toLowerCase();
+
+        const matchesName = name.includes(nameFilter);
+        const matchesDescription = description.includes(descriptionFilter);
+        const matchesCategory = categoryFilter === '' || category === categoryFilter;
+
+        card.style.display = (matchesName && matchesDescription && matchesCategory) ? '' : 'none';
+    });
+}
+
+function clearFilters() {
+    document.getElementById('filterName').value = '';
+    document.getElementById('filterDescription').value = '';
+    document.getElementById('filterCategory').value = '';
+    document.querySelectorAll('#productsGrid .col-md-4').forEach(card => card.style.display = '');
+}
+
+// Adiciona eventos de filtro
+document.getElementById('filterName').addEventListener('input', filterProducts);
+document.getElementById('filterDescription').addEventListener('input', filterProducts);
+document.getElementById('filterCategory').addEventListener('input', filterProducts);
+</script>
+{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-primary fw-bold">Produtos</h2>
+        <div class="d-flex gap-2">
+            <div class="btn-group">
+                <button class="btn btn-outline-secondary" onclick="exportToCSV()">
+                    <i class="fas fa-file-csv"></i> CSV
+                </button>
+                <button class="btn btn-outline-secondary" onclick="exportToPDF()">
+                    <i class="fas fa-file-pdf"></i> PDF
+                </button>
+                <button class="btn btn-outline-secondary" onclick="exportToExcel()">
+                    <i class="fas fa-file-excel"></i> Excel
+                </button>
+            </div>
+            {% if current_user.is_admin %}
+            <a href="{{ url_for('products.create_product') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Novo Produto
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Filtros</h5>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Nome</label>
+                    <input type="text" class="form-control" id="filterName" placeholder="Filtrar por nome">
+                </div>
+                    <div class="col-md-4">
+                    <label class="form-label">Categoria</label>
+                    <select class="form-select" id="filterCategory">
+                        <option value="">Todas as categorias</option>
+                        {% for category in categories %}
+                        <option value="{{ category.name }}">{{ category.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button class="btn btn-secondary me-2" onclick="clearFilters()">Limpar Filtros</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row" id="productsGrid">
+        {% for product in products %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <style>
+                .image-scroll-container {
+                    height: 200px;
+                    overflow-x: auto;
+                    white-space: nowrap;
+                    scrollbar-width: thin;
+                    scrollbar-color: #6c757d #f8f9fa;
+                }
+                .image-scroll-container::-webkit-scrollbar {
+                    height: 8px;
+                }
+                .image-scroll-container::-webkit-scrollbar-track {
+                    background: #f8f9fa;
+                    border-radius: 4px;
+                }
+                .image-scroll-container::-webkit-scrollbar-thumb {
+                    background-color: #6c757d;
+                    border-radius: 4px;
+                }
+                .image-scroll-container img {
+                    transition: transform 0.2s;
+                    margin-right: 4px;
+                }
+                .image-scroll-container img:hover {
+                    transform: scale(1.05);
+                }
+                </style>
+                <a href="{{ url_for('products.gallery_products') }}" class="text-decoration-none">
+                    <div class="image-scroll-container">
+                    {% if product.images %}
+                        {% for image in product.images %}
+                        <img src="{{ url_for('products.get_product_image', image_id=image.id) }}" 
+                             class="d-inline-block" 
+                             alt="{{ product.name }}" 
+                             style="height: 200px; width: auto; object-fit: cover;">
+                        {% endfor %}
+                    {% else %}
+                        <div class="d-flex align-items-center justify-content-center h-100 w-100">
+                            <i class="fas fa-box fa-3x text-secondary"></i>
+                        </div>
+                    {% endif %}
+                    </div>
+                </a>
+                <div class="card-body">
+                    <h5 class="card-title">{{ product.name }}</h5>
+                    <p class="card-text">{{ product.description }}</p>
+                    <div class="d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="mb-0">Preço: ¥ {{ product.price|round|int }}</h6>
+                            <div>
+                                <span class="badge {% if product.stock > 10 %}bg-success{% elif product.stock > 0 %}bg-warning{% else %}bg-danger{% endif %}">
+                                    Estoque: {{ product.stock }}
+                                </span>
+                                <span class="badge {% if product.is_active %}bg-success{% else %}bg-secondary{% endif %}">
+                                    {{ 'Ativo' if product.is_active else 'Inativo' }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <span class="badge bg-info">{{ product.category.name if product.category else 'Sem categoria' }}</span>
+                        </div>
+                        <div class="small text-muted">
+                            <div>Data de Entrada: {{ product.data_entrada.strftime('%d/%m/%Y') if product.data_entrada else 'Não definida' }}</div>
+                            <div>Total Custos: ¥ {{ (product.custo1 + product.custo2 + product.custo3 + product.custo4 + product.custo5)|round|int }}</div>
+                        </div>
+                    </div>
+                </div>
+                {% if current_user.is_admin %}
+                <div class="card-footer bg-transparent">
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('products.edit_product', id=product.id) }}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-edit me-1"></i>Editar
+                        </a>
+                        <form action="{{ url_for('products.delete_product', id=product.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Tem certeza que deseja excluir este produto?');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                <i class="fas fa-trash me-1"></i>Excluir
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nouislider@14.6.3/distribute/nouislider.min.css">
+<script src="https://cdn.jsdelivr.net/npm/nouislider@14.6.3/distribute/nouislider.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+function getVisibleProductData() {
+    const cards = Array.from(document.querySelectorAll('#productsGrid .card')).filter(card => card.closest('.col-md-4').style.display !== 'none');
+    const headers = ['Nome', 'Descrição', 'Categoria', 'Preço', 'Total Custos', 'Data de Entrada'];
+    const data = cards.map(card => {
+        const cardBody = card.querySelector('.card-body');
+        const category = cardBody.querySelector('.badge.bg-info').textContent.trim();
+        const price = cardBody.querySelector('h6.mb-0').textContent.replace('Preço: ¥', '').trim();
+        const totalCost = cardBody.querySelector('.small.text-muted div:last-child').textContent.replace('Total Custos: ¥', '').trim();
+        const entryDate = cardBody.querySelector('.small.text-muted div:first-child').textContent.replace('Data de Entrada:', '').trim();
+        
+        return [
+            card.querySelector('.card-title').textContent,
+            card.querySelector('.card-text').textContent,
+            category,
+            price,
+            totalCost,
+            entryDate
+        ];
+    });
+    return { headers, data };
+}
+
+function exportToCSV() {
+    const { headers, data } = getVisibleProductData();
+    const csvContent = [
+        headers.join(','),
+        ...data.map(row => row.join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'produtos.csv';
+    link.click();
+}
+
+function exportToPDF() {
+    const { headers, data } = getVisibleProductData();
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.autoTable({
+        head: [headers],
+        body: data
+    });
+    doc.save('produtos.pdf');
+}
+
+function exportToExcel() {
+    const { headers, data } = getVisibleProductData();
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Produtos');
+    XLSX.writeFile(wb, 'produtos.xlsx');
+}
+
+function filterProducts() {
+    const nameFilter = document.getElementById('filterName').value.toLowerCase();
+    const descriptionFilter = document.getElementById('filterDescription').value.toLowerCase();
+    const categoryFilter = document.getElementById('filterCategory').value.toLowerCase();
+
+    document.querySelectorAll('#productsGrid .col-md-4').forEach(card => {
+        const name = card.querySelector('.card-title').textContent.toLowerCase();
+        const description = card.querySelector('.card-text').textContent.toLowerCase();
+        const category = card.querySelector('.card-body').textContent.split('\n')[2].trim().toLowerCase();
+
+        const matchesName = name.includes(nameFilter);
+        const matchesDescription = description.includes(descriptionFilter);
+        const matchesCategory = categoryFilter === '' || category === categoryFilter;
+
+        card.style.display = (matchesName && matchesDescription && matchesCategory) ? '' : 'none';
+    });
+}
+
+function clearFilters() {
+    document.getElementById('filterName').value = '';
+    document.getElementById('filterDescription').value = '';
+    document.getElementById('filterCategory').value = '';
+    document.querySelectorAll('#productsGrid .col-md-4').forEach(card => card.style.display = '');
+}
+
+// Adiciona eventos de filtro
+document.getElementById('filterName').addEventListener('input', filterProducts);
+document.getElementById('filterDescription').addEventListener('input', filterProducts);
+document.getElementById('filterCategory').addEventListener('input', filterProducts);
+</script>
+{% endblock %}
