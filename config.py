@@ -13,7 +13,8 @@ import os
 
 # Criação da aplicação Flask
 app = Flask(__name__)
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://vision_database_user:1bnnPrnMf4Vb4qTNAlVdIc0JdXtFBi9v@dpg-cvsgcl49c44c73a27cig-a.oregon-postgres.render.com/vision_database'
+# Configuração do banco de dados PostgreSQL
+#app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://vision_database_user:1bnnPrnMf4Vb4qTNAlVdIc0JdXtFBi9v@dpg-cvsgcl49c44c73a27cig-a.oregon-postgres.render.com/vision_database'
 
 # Configurações básicas da aplicação
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-here')  # Chave secreta para sessões
