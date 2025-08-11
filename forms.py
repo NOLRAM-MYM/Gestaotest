@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, BooleanField, SubmitField, FloatField, IntegerField, SelectField, DateField
+from wtforms import StringField, PasswordField, BooleanField, SubmitField, FloatField, IntegerField, SelectField, DateField, TextAreaField
 from wtforms.validators import DataRequired, Email, Length, EqualTo, NumberRange
 
 class LoginForm(FlaskForm):
@@ -30,6 +30,24 @@ class AdminForm(FlaskForm):
     password = PasswordField('Senha', validators=[DataRequired()])
     confirm_password = PasswordField('Confirmar Senha', validators=[DataRequired(), EqualTo('password')])
     submit = SubmitField('Criar Administrador')
+
+class ProductForm(FlaskForm):
+    name = StringField('Nome do Produto', validators=[DataRequired(), Length(min=2, max=100)])
+    description = TextAreaField('Descrição')
+    price = FloatField('Preço', validators=[DataRequired(), NumberRange(min=0)])
+    stock = IntegerField('Estoque', validators=[DataRequired(), NumberRange(min=0)])
+    category_id = SelectField('Categoria', coerce=int)
+    custo1 = FloatField('Custo 1', validators=[NumberRange(min=0)], default=0)
+    custo2 = FloatField('Custo 2', validators=[NumberRange(min=0)], default=0)
+    custo3 = FloatField('Custo 3', validators=[NumberRange(min=0)], default=0)
+    custo4 = FloatField('Custo 4', validators=[NumberRange(min=0)], default=0)
+    custo5 = FloatField('Custo 5', validators=[NumberRange(min=0)], default=0)
+    submit = SubmitField('Salvar Produto')
+
+class CategoryForm(FlaskForm):
+    name = StringField('Nome da Categoria', validators=[DataRequired(), Length(min=2, max=50)])
+    description = TextAreaField('Descrição')
+    submit = SubmitField('Salvar Categoria')
 
 class SaleForm(FlaskForm):
     client_id = SelectField('Cliente', validators=[DataRequired(message='Por favor, selecione um cliente')], coerce=int)
@@ -69,7 +87,6 @@ class SaleForm(FlaskForm):
                 return False
         
         return True
-
 
 class RequestResetForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email()])
